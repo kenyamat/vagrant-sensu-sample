@@ -2,10 +2,14 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
-  config.berkshelf.enabled = true
+  if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.auto_detect = true
+  end
 
   config.vm.define :server do |server|
     server.omnibus.chef_version = :latest
+    # https://github.com/sensu/sensu-chef/issues/234
+    # server.omnibus.chef_version = "11.8.2"  
     server.vm.hostname = "server"
     server.vm.box = "opscode-centos-6.5"
     server.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5_chef-provisionerless.box"
@@ -19,11 +23,15 @@ Vagrant.configure("2") do |config|
     end
 
     server.vm.provision :chef_solo do |chef|
+      chef.cookbooks_path = ["./cookbooks", "./site-cookbooks"]
       chef.log_level = :debug
       chef.data_bags_path = "data_bags"
       chef.add_recipe "sensu-server-wrapper"
       chef.add_recipe "sensu-server-wrapper::check"
       chef.json = {
+        "sensu-server-wrapper" => {
+          "iptables_enabled" => true
+        },
         :sensu => {
             :rabbitmq => {
               :host => "192.168.33.10",
@@ -41,7 +49,9 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define :client01 do |client01|
-    client01.omnibus.chef_version = :latest
+    # client01.omnibus.chef_version = :latest
+    # https://github.com/sensu/sensu-chef/issues/234
+    client01.omnibus.chef_version = "11.8.2"  
     client01.vm.hostname = "client01"
     client01.vm.box = "opscode-centos-6.5"
     client01.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5_chef-provisionerless.box"
@@ -55,10 +65,10 @@ Vagrant.configure("2") do |config|
     end
 
     client01.vm.provision :chef_solo do |chef|
+      chef.cookbooks_path = ["./cookbooks", "./site-cookbooks"]
       chef.log_level = :debug
       chef.data_bags_path = "data_bags"
       chef.add_recipe "sensu-client-wrapper"
-      chef.add_recipe "dstat"
       chef.json = {
         "sensu-client-wrapper" => {
           :ipaddress => "192.168.33.200",
@@ -69,6 +79,9 @@ Vagrant.configure("2") do |config|
             :rabbitmq => {
               :host => "192.168.33.10",
             },
+            :api => {
+              :host => "192.168.33.10",
+            }
         }
       }
     end
@@ -76,7 +89,9 @@ Vagrant.configure("2") do |config|
 
 
   config.vm.define :client02 do |client02|
-    client02.omnibus.chef_version = :latest
+    # client02.omnibus.chef_version = :latest
+    # https://github.com/sensu/sensu-chef/issues/234
+    client02.omnibus.chef_version = "11.8.2"  
     client02.vm.hostname = "client02"
     client02.vm.box = "opscode-centos-6.5"
     client02.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5_chef-provisionerless.box"
@@ -90,6 +105,7 @@ Vagrant.configure("2") do |config|
     end
 
     client02.vm.provision :chef_solo do |chef|
+      chef.cookbooks_path = ["./cookbooks", "./site-cookbooks"]
       chef.log_level = :debug
       chef.data_bags_path = "data_bags"
       chef.add_recipe "sensu-client-wrapper"
@@ -103,8 +119,33 @@ Vagrant.configure("2") do |config|
             :rabbitmq => {
               :host => "192.168.33.10",
             },
+            :api => {
+              :host => "192.168.33.10",
+            }
         }
       }
+    end
+  end
+
+  config.vm.define :admin do |admin|
+    admin.omnibus.chef_version = :latest
+    admin.vm.hostname = "admin"
+    admin.vm.box = "opscode-ubuntu-12.04"
+    admin.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+    admin.vm.network :private_network, ip: "192.168.33.100"
+    admin.vm.provider :virtualbox do |vb|
+      # Don't boot with headless mode
+      vb.gui = true
+   
+      # Use VBoxManage to customize the VM. For example to change memory:
+      vb.customize ["modifyvm", :id, "--memory", "512"]
+    end
+
+    admin.vm.provision :chef_solo do |chef|
+      chef.log_level = :debug
+      chef.data_bags_path = "data_bags"
+      chef.add_recipe "ruby::1.9.1"
+      chef.add_recipe "sensu-admin"
     end
   end
 
@@ -123,6 +164,7 @@ Vagrant.configure("2") do |config|
     end
 
     graphite.vm.provision :chef_solo do |chef|
+      chef.cookbooks_path = ["./cookbooks", "./site-cookbooks"]
       chef.log_level = :debug
       chef.data_bags_path = "data_bags"
       chef.add_recipe "sensu-client-wrapper"
@@ -137,6 +179,9 @@ Vagrant.configure("2") do |config|
             :rabbitmq => {
               :host => "192.168.33.10",
             },
+            :api => {
+              :host => "192.168.33.10",
+            }
         },
         :graphite => {
             :timezone => "Asia/Tokyo",
