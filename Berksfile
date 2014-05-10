@@ -8,5 +8,4 @@ cookbook 'sensu-client-wrapper', git:"https://github.com/ryuzee-cookbooks/sensu-
 cookbook 'ruby'
 cookbook 'sensu-admin', git:"https://github.com/sensu/sensu-admin-chef.git"
 cookbook 'graphite'
-cookbook 'redisio', ">= 1.7.1"
 cookbook 'apache2-simple', git:"https://github.com/ryuzee-cookbooks/apache2-simple.git"
