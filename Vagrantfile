@@ -6,13 +6,19 @@ Vagrant.configure("2") do |config|
     config.cache.auto_detect = true
   end
 
+  centos_6_5_i386 = "opscode-centos-6.5-i386"
+  centos_6_5_i386_box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5-i386_chef-provisionerless.box"
+
+  ubuntu_10_04_i386 = "opscode-ubuntu-10.04-i386"
+  ubuntu_10_04_i386_box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04-i386_chef-provisionerless.box"
+
   config.vm.define :server do |server|
     server.omnibus.chef_version = :latest
     # https://github.com/sensu/sensu-chef/issues/234
     # server.omnibus.chef_version = "11.8.2"  
     server.vm.hostname = "server"
-    server.vm.box = "opscode-centos-6.5"
-    server.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5_chef-provisionerless.box"
+    server.vm.box = centos_6_5_i386
+    server.vm.box_url = centos_6_5_i386_box_url
     server.vm.network :private_network, ip: "192.168.33.10"
     server.vm.provider :virtualbox do |vb|
       # Don't boot with headless mode
@@ -53,8 +59,8 @@ Vagrant.configure("2") do |config|
     # https://github.com/sensu/sensu-chef/issues/234
     client01.omnibus.chef_version = "11.8.2"  
     client01.vm.hostname = "client01"
-    client01.vm.box = "opscode-centos-6.5"
-    client01.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5_chef-provisionerless.box"
+    client01.vm.box = centos_6_5_i386
+    client01.vm.box_url = centos_6_5_i386_box_url
     client01.vm.network :private_network, ip: "192.168.33.200"
     client01.vm.provider :virtualbox do |vb|
       # Don't boot with headless mode
@@ -93,8 +99,8 @@ Vagrant.configure("2") do |config|
     # https://github.com/sensu/sensu-chef/issues/234
     client02.omnibus.chef_version = "11.8.2"  
     client02.vm.hostname = "client02"
-    client02.vm.box = "opscode-centos-6.5"
-    client02.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5_chef-provisionerless.box"
+    client02.vm.box = centos_6_5_i386
+    client02.vm.box_url = centos_6_5_i386_box_url
     client02.vm.network :private_network, ip: "192.168.33.201"
     client02.vm.provider :virtualbox do |vb|
       # Don't boot with headless mode
@@ -130,8 +136,8 @@ Vagrant.configure("2") do |config|
   config.vm.define :admin do |admin|
     admin.omnibus.chef_version = :latest
     admin.vm.hostname = "admin"
-    admin.vm.box = "opscode-ubuntu-12.04"
-    admin.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+    admin.vm.box = ubuntu_10_04_i386
+    admin.vm.box_url = ubuntu_10_04_i386_box_url
     admin.vm.network :private_network, ip: "192.168.33.100"
     admin.vm.provider :virtualbox do |vb|
       # Don't boot with headless mode
@@ -144,6 +150,7 @@ Vagrant.configure("2") do |config|
     admin.vm.provision :chef_solo do |chef|
       chef.log_level = :debug
       chef.data_bags_path = "data_bags"
+      chef.add_recipe "apt"
       chef.add_recipe "ruby::1.9.1"
       chef.add_recipe "sensu-admin"
     end
@@ -152,8 +159,8 @@ Vagrant.configure("2") do |config|
   config.vm.define :graphite do |graphite|
     graphite.omnibus.chef_version = :latest
     graphite.vm.hostname = "graphite"
-    graphite.vm.box = "opscode-ubuntu-12.04"
-    graphite.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+    graphite.vm.box = centos_6_5_i386
+    graphite.vm.box_url = centos_6_5_i386_box_url
     graphite.vm.network :private_network, ip: "192.168.33.101"
     graphite.vm.provider :virtualbox do |vb|
       # Don't boot with headless mode
@@ -168,6 +175,9 @@ Vagrant.configure("2") do |config|
       chef.log_level = :debug
       chef.data_bags_path = "data_bags"
       chef.add_recipe "sensu-client-wrapper"
+      chef.add_recipe "yum"
+      chef.add_recipe "yum-epel"
+      chef.add_recipe "build-essential"
       chef.add_recipe "graphite"
       chef.json = {
         "sensu-client-wrapper" => {
